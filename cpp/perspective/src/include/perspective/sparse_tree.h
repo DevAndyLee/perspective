@@ -259,6 +259,8 @@ public:
 
     const std::shared_ptr<t_tcdeltas>& get_deltas() const;
 
+    const std::unordered_set<t_uindex> get_delta_ridxs() const;
+
     void clear();
 
     t_tscalar first_last_helper(
@@ -319,6 +321,7 @@ private:
     t_sidxmap m_smap;
     std::vector<const t_column*> m_aggcols;
     std::shared_ptr<t_tcdeltas> m_deltas;
+    std::unordered_set<t_uindex> m_delta_ridxs;
     std::vector<t_minmax> m_minmax;
     t_tree_unify_rec_vec m_tree_unification_records;
     std::vector<bool> m_features;

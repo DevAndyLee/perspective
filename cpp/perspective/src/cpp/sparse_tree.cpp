@@ -849,6 +849,16 @@ t_stree::gen_aggidx() {
     return rval;
 }
 
+/**
+ * @brief calculate and aggregate new data.
+ *
+ * @param nidx
+ * @param info
+ * @param src_ridx the row index before the update operation
+ * @param dst_ridx the row index the update operation writes to
+ * @param nstrands
+ * @param gstate
+ */
 void
 t_stree::update_agg_table(t_uindex nidx, t_agg_update_info& info, t_uindex src_ridx,
     t_uindex dst_ridx, t_index nstrands, const t_gstate& gstate) {
@@ -1260,7 +1270,14 @@ t_stree::update_agg_table(t_uindex nidx, t_agg_update_info& info, t_uindex src_r
         m_has_delta = m_has_delta || val_neq;
         bool deltas_enabled = m_features.at(CTX_FEAT_DELTA);
         if (deltas_enabled && val_neq) {
+            /**
+             * write two deltas:
+             * - old and new values go into m_deltas, a boost multi-index container
+             * - row indices go into m_delta_ridxs, which keeps track of updated row indices
+             */
             m_deltas->insert(t_tcdelta(nidx, idx, old_value, new_value));
+            // TODO: handle added rows, which are marked by `dst_ridx`
+            m_delta_ridxs.insert(src_ridx);
         }
 
     } // end for
@@ -1719,6 +1736,7 @@ t_stree::get_child_indices(t_index idx, std::vector<t_index>& out_data) const {
 void
 t_stree::clear_deltas() {
     m_deltas->clear();
+    m_delta_ridxs.clear();
     m_has_delta = false;
 }
 
@@ -1770,6 +1788,12 @@ t_stree::get_min_max() const {
 const std::shared_ptr<t_tcdeltas>&
 t_stree::get_deltas() const {
     return m_deltas;
+}
+
+const std::unordered_set<t_uindex>
+t_stree::get_delta_ridxs() const {
+    // TODO: shared ptr?
+    return m_delta_ridxs;
 }
 
 t_tscalar

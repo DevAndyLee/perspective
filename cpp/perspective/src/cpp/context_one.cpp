@@ -366,37 +366,19 @@ t_ctx1::get_step_delta(t_index bidx, t_index eidx) {
     return rval;
 }
 
-t_rowdelta
-t_ctx1::get_row_delta() {
-    t_rowdelta rval;
-    return rval;
-}
-
 /**
- * @brief Returns the row indices that have been updated with new data.
+ * @brief Returns row indices that have been updated with new data.
  *
- * @param bidx
- * @param eidx
  * @return t_rowdelta
  */
 t_rowdelta
-t_ctx1::get_row_delta(t_index bidx, t_index eidx) {
+t_ctx1::get_row_delta() {
     PSP_TRACE_SENTINEL();
     PSP_VERBOSE_ASSERT(m_init, "touching uninited object");
-    bidx = std::min(bidx, t_index(m_traversal->size()));
-    eidx = std::min(eidx, t_index(m_traversal->size()));
     std::vector<t_index> rows;
-
-    const auto& deltas = m_tree->get_deltas();
-    for (t_index idx = bidx; idx < eidx; ++idx) {
-        t_index ptidx = m_traversal->get_tree_index(idx);
-        // Retrieve delta from storage
-        auto iterators = deltas->get<by_tc_nidx_aggidx>().equal_range(ptidx);
-        bool unique_ridx = std::find(rows.begin(), rows.end(), idx) == rows.end();
-        if ((iterators.first != iterators.second) && unique_ridx)
-            rows.push_back(idx);
-    }
-
+    auto aggidxs = m_tree->get_delta_ridxs();
+    rows.reserve(aggidxs.size());
+    std::copy(aggidxs.begin(), aggidxs.end(), std::back_inserter(rows));
     std::sort(rows.begin(), rows.end());
     t_rowdelta rval(m_rows_changed, rows);
     m_tree->clear_deltas();
